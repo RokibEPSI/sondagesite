@@ -1,0 +1,115 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #4a90e2;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+}
+
+main {
+  max-width: 800px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+h2 {
+  margin-top: 2rem;
+  color: #333;
+}
+
+.poll {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.options button {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.7rem;
+  border: none;
+  background: #4a90e2;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.options button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.bar {
+  height: 20px;
+  background: #4a90e2;
+  text-align: right;
+  color: #fff;
+  padding-right: 5px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+#admin-panel {
+  display: none;
+  margin-bottom: 2rem;
+}
+
+#admin-panel input,
+#admin-panel textarea {
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.7rem;
+}
+
+.toggle-admin {
+  background: #e67e22;
+  border: none;
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+}
+
+.info-vote {
+    color: green;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.option-result {
+  margin-bottom: 10px;
+}
+
+.vote-btn {
+  margin-right: 10px;
+}
+
+.progress-bar {
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 20px;
+  width: 300px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.progress-bar .fill {
+  background: #4caf50;
+  height: 100%;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  transition: width 0.5s;
+}

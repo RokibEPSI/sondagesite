@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Sondages</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container py-5">
+    <h1 class="text-center mb-4">Espace Administrateur</h1>
+    <div class="text-center mb-4">
+      <a href="/" class="btn btn-secondary">Retour utilisateur</a>
+      <a href="/logout" class="btn btn-danger"> Déconnexion</a>
+    </div>
+
+    <!-- Formulaire création sondage direct -->
+    <section class="card p-3 mt-4 shadow">
+      <h2>Créer un sondage (Admin)</h2>
+      <form id="adminPollForm">
+        <div class="mb-3">
+          <label for="adminQuestion" class="form-label">Question</label>
+          <input type="text" id="adminQuestion" class="form-control" required>
+        </div>
+        <div id="adminOptions">
+          <div class="mb-2">
+            <input type="text" class="form-control" placeholder="Option 1" required>
+          </div>
+          <div class="mb-2">
+            <input type="text" class="form-control" placeholder="Option 2" required>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addAdminOption()">+ Ajouter une option</button>
+        <button type="submit" class="btn btn-primary">Créer et activer</button>
+      </form>
+    </section>
+
+    <!-- Sondages en attente -->
+    <div class="card shadow mb-4 mt-4">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">Sondages en attente de validation</h5>
+      </div>
+      <div class="card-body">
+        <ul id="pending-list" class="list-group mb-0"></ul>
+      </div>
+    </div>
+
+    <!-- Sondages actifs -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Sondages actifs</h5>
+      </div>
+      <div class="card-body" id="active-list">
+        <p class="text-muted">Chargement...</p>
+      </div>
+    </div>
+
+    <!-- Sondages expirés -->
+    <div class="card shadow">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Sondages expirés</h5>
+      </div>
+      <div class="card-body" id="expired-list">
+        <p class="text-muted">Chargement...</p>
+      </div>
+    </div>
+  </div>
+   
+
+  <!-- JS en bas de page -->
+  <script>
+    function addAdminOption() {
+      const div = document.createElement("div");
+      div.classList.add("mb-2");
+      div.innerHTML = `<input type="text" class="form-control" placeholder="Nouvelle option" required>`;
+      document.getElementById("adminOptions").appendChild(div);
+    }
+
+    document.getElementById("adminPollForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = document.getElementById("adminQuestion").value;
+      const options = [...document.querySelectorAll("#adminOptions input")].map(i => i.value);
+
+      const res = await fetch("/api/admin/create", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({question, options})
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      e.target.reset();
+      document.getElementById("adminOptions").innerHTML = `
+        <div class="mb-2"><input type="text" class="form-control" placeholder="Option 1" required></div>
+        <div class="mb-2"><input type="text" class="form-control" placeholder="Option 2" required></div>
+      `;
+      loadAdminData();
+    });
+
+    async function loadAdminData() {
+      // Pending
+      const pendingRes = await fetch("/api/polls/pending");
+      const pending = await pendingRes.json();
+      const pendingList = document.getElementById("pending-list");
+      pendingList.innerHTML = "";
+      if (pending.length === 0) {
+        pendingList.innerHTML = "<li class='list-group-item text-muted'>Aucune proposition en attente.</li>";
+      } else {
+        pending.forEach((poll, idx) => {
+          const li = document.createElement("li");
+          li.className = "list-group-item d-flex justify-content-between align-items-center";
+          li.innerHTML = `
+            <div>
+              <b>${poll.question}</b>
+              <ul class="mb-0">${poll.options.map(o => `<li>${o.text}</li>`).join("")}</ul>
+            </div>
+            <div>
+              <button class="btn btn-success btn-sm me-2" onclick="validatePoll(${idx})">✔ Valider</button>
+              <button class="btn btn-danger btn-sm" onclick="refusePoll(${idx})">❌ Refuser</button>
+            </div>
+          `;
+          pendingList.appendChild(li);
+        });
+      }
+
+      // Active
+      const activeRes = await fetch("/api/polls");
+      const active = await activeRes.json();
+      const activeList = document.getElementById("active-list");
+      activeList.innerHTML = "";
+      if (active.length === 0) {
+        activeList.innerHTML = "<p class='text-muted'>Aucun sondage actif.</p>";
+      } else {
+        active.forEach((poll, idx) => {
+          const div = document.createElement("div");
+          div.className = "mb-3 p-3 border rounded";
+          div.innerHTML = `
+            <h6>${poll.question}</h6>
+            <ul>${poll.options.map(o => `<li>${o.text} - ${o.votes} votes</li>`).join("")}</ul>
+            <button class="btn btn-sm btn-danger" onclick="expirePoll(${idx})">Expirer</button>
+          `;
+          activeList.appendChild(div);
+        });
+      }
+
+      // Expired
+      const expiredRes = await fetch("/api/polls/expired");
+      const expired = await expiredRes.json();
+      const expiredList = document.getElementById("expired-list");
+      expiredList.innerHTML = "";
+      if (expired.length === 0) {
+        expiredList.innerHTML = "<p class='text-muted'>Aucun sondage expiré.</p>";
+      } else {
+        expired.forEach(poll => {
+          const div = document.createElement("div");
+          div.className = "mb-3 p-3 border rounded";
+          div.innerHTML = `
+            <h6>${poll.question}</h6>
+            <ul>${poll.options.map(o => `<li>${o.text} - ${o.votes} votes</li>`).join("")}</ul>
+          `;
+          expiredList.appendChild(div);
+        });
+      }
+    }
+
+    async function validatePoll(idx) {
+      await fetch(`/api/polls/validate/${idx}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    async function refusePoll(idx) {
+      if (confirm("Voulez-vous vraiment supprimer ce sondage ?")) {
+        await fetch(`/api/polls/refuse/${idx}`, { method: "DELETE" });
+        loadAdminData();
+      }
+    }
+
+    async function expirePoll(idx) {
+      await fetch(`/api/polls/expire/${idx}`, { method: "POST" });
+      loadAdminData();
+    }
+
+    // Initialisation
+    loadAdminData();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

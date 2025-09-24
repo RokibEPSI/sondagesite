@@ -1,0 +1,130 @@
+[
+  {
+    "id": "a147ce25-228e-4b67-9609-21bd979bbdf0",
+    "question": "comment vous  manger?",
+    "options": [
+      {
+        "text": "debout",
+        "votes": 3
+      },
+      {
+        "text": "assise",
+        "votes": 2
+      },
+      {
+        "text": "coucher",
+        "votes": 1
+      },
+      {
+        "text": "acroupie",
+        "votes": 1
+      }
+    ]
+  },
+  {
+    "question": "qu'elle est la meilleure politique  qu'on adopte au benin?",
+    "options": [
+      {
+        "text": "démocratie",
+        "votes": 1
+      },
+      {
+        "text": "dictature",
+        "votes": 0
+      }
+    ],
+    "total_votes": 1,
+    "voters": [
+      "127.0.0.1"
+    ]
+  },
+  {
+    "question": "qu'elle est la meilleure politique  qu'on adopte au bénin?",
+    "options": [
+      {
+        "text": "Democratie",
+        "votes": 1
+      },
+      {
+        "text": "Politique",
+        "votes": 0
+      }
+    ],
+    "status": "active",
+    "voters": [
+      "127.0.0.1"
+    ]
+  },
+  {
+    "question": "Pour  l'élection présidentielle  prochaine  tu vote  pour qu'elle partie  ?",
+    "options": [
+      {
+        "text": "Pr",
+        "votes": 0
+      },
+      {
+        "text": "LD",
+        "votes": 1
+      }
+    ],
+    "status": "active",
+    "voters": [
+      "127.0.0.1"
+    ]
+  },
+  {
+    "question": "tu aimes quelle matiere  ?",
+    "options": [
+      {
+        "text": "maths",
+        "votes": 0
+      },
+      {
+        "text": "pct",
+        "votes": 0
+      },
+      {
+        "text": "svt",
+        "votes": 0
+      }
+    ],
+    "status": "expired",
+    "voters": []
+  },
+  {
+    "question": "comment  appelle ton le president de la republique",
+    "options": [
+      {
+        "text": "talon",
+        "votes": 0
+      },
+      {
+        "text": "yayi boni",
+        "votes": 0
+      },
+      {
+        "text": "jenontain",
+        "votes": 0
+      }
+    ],
+    "status": "pending",
+    "voters": []
+  },
+  {
+    "question": "tu aimes quelle matiere  ?",
+    "options": [
+      {
+        "text": "chimie",
+        "votes": 0
+      },
+      {
+        "text": "physique",
+        "votes": 1
+      }
+    ],
+    "status": "active",
+    "voters": [
+      "127.0.0.1"
+    ]
+  }
+]
