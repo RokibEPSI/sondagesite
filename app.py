@@ -3,13 +3,20 @@ from flask_cors import CORS
 from datetime import timedelta
 import json, os
 
+from flask_sqlalchemy import SQLAlchemy
+
+
+
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY_CHANGE_ME"  # Clé de session
 app.permanent_session_lifetime = timedelta(minutes=30)
 CORS(app)
 
+# Récupération de l’URL Postgres fournie par Render
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 DATA_FILE = "polls.json"
-
+db = SQLAlchemy(app)
 # ----------- Utils lecture / écriture JSON -----------
 
 def load_polls():
