@@ -5,19 +5,33 @@ import json, os
 
 from flask_sqlalchemy import SQLAlchemy
 
-
-
 app = Flask(__name__)
-app.secret_key = "SECRET_KEY_CHANGE_ME"  # Clé de session
+
+# 🔑 Clé secrète sécurisée (prend depuis ENV, sinon fallback)
+app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_key")
 app.permanent_session_lifetime = timedelta(minutes=30)
+
 CORS(app)
 
-# Récupération de l’URL Postgres fournie par Render
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# ----------- CONFIG BASE DE DONNÉES -----------
+database_url = os.environ.get("DATABASE_URL")
+
+if database_url:
+    # Render fournit postgres://, SQLAlchemy veut postgresql://
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    # Local fallback → SQLite
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///polls.db"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-DATA_FILE = "polls.json"
+
 db = SQLAlchemy(app)
-# ----------- Utils lecture / écriture JSON -----------
+
+# ----------- FICHIER JSON POUR LES SONDAGES -----------
+DATA_FILE = "polls.json"
 
 def load_polls():
     if os.path.exists(DATA_FILE):
@@ -35,24 +49,20 @@ def save_polls(polls):
 
 
 # ----------- ROUTES UTILISATEUR -----------
-
 @app.route("/api/polls", methods=["GET"])
 def get_active_polls():
-    """Récupère uniquement les sondages actifs"""
     polls = [p for p in load_polls() if p.get("status") == "active"]
     return jsonify(polls)
 
 
 @app.route("/api/polls/expired", methods=["GET"])
 def get_expired_polls():
-    """Récupère uniquement les sondages expirés"""
     polls = [p for p in load_polls() if p.get("status") == "expired"]
     return jsonify(polls)
 
 
 @app.route("/api/proposer", methods=["POST"])
 def proposer_poll():
-    """Un utilisateur propose un sondage (en attente de validation)"""
     data = request.json
     if not data.get("question") or not data.get("options"):
         return jsonify({"error": "Champs manquants"}), 400
@@ -70,7 +80,6 @@ def proposer_poll():
 
 @app.route("/api/vote/<int:poll_id>/<int:option_index>", methods=["POST"])
 def vote(poll_id, option_index):
-    """Vote pour une option d’un sondage actif"""
     user_ip = request.remote_addr
     polls = load_polls()
     active_polls = [p for p in polls if p.get("status") == "active"]
@@ -91,17 +100,14 @@ def vote(poll_id, option_index):
 
 
 # ----------- ROUTES ADMIN -----------
-
 @app.route("/api/polls/pending", methods=["GET"])
 def get_pending():
-    """Voir les sondages en attente de validation"""
     polls = [p for p in load_polls() if p.get("status") == "pending"]
     return jsonify(polls)
 
 
 @app.route("/api/polls/validate/<int:index>", methods=["POST"])
 def validate_poll(index):
-    """Valider un sondage → passe en actif"""
     polls = load_polls()
     pending_polls = [p for p in polls if p.get("status") == "pending"]
 
@@ -116,7 +122,6 @@ def validate_poll(index):
 
 @app.route("/api/admin/create", methods=["POST"])
 def admin_create_poll():
-    """Créer un sondage directement en actif"""
     data = request.json
     if not data.get("question") or not data.get("options"):
         return jsonify({"error": "Champs manquants"}), 400
@@ -134,7 +139,6 @@ def admin_create_poll():
 
 @app.route("/api/polls/expire/<int:index>", methods=["POST"])
 def expire_poll(index):
-    """Expirer un sondage → passe en expiré"""
     polls = load_polls()
     active_polls = [p for p in polls if p.get("status") == "active"]
 
@@ -149,7 +153,6 @@ def expire_poll(index):
 
 @app.route("/api/polls/refuse/<int:index>", methods=["DELETE"])
 def refuse_poll(index):
-    """Supprimer/refuser un sondage en attente"""
     polls = load_polls()
     pending_polls = [p for p in polls if p.get("status") == "pending"]
 
@@ -164,7 +167,6 @@ def refuse_poll(index):
 
 
 # ----------- AUTH ADMIN -----------
-
 ADMIN_CREDENTIALS = {
     "username": "admin",
     "password": "sondage.25"
@@ -195,7 +197,6 @@ def logout():
 
 @app.route("/admin")
 def admin_page():
-    """Dashboard admin (protégé par login)"""
     if "admin" not in session:
         flash("Veuillez vous connecter pour accéder à l'administration", "warning")
         return redirect(url_for("login"))
@@ -203,21 +204,21 @@ def admin_page():
 
 
 # ----------- ROUTES PAGES HTML -----------
-
 @app.route("/")
 def home():
-    return render_template("index.html")  # page utilisateur
+    return render_template("index.html")
 
 
 @app.route("/proposer")
 def proposer_page():
-    return render_template("proposer.html")  # proposer sondage
+    return render_template("proposer.html")
 
 
 @app.route("/historique")
 def historique_page():
-    return render_template("historique.html")  # anciens sondages
+    return render_template("historique.html")
 
 
+# ----------- MAIN -----------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
