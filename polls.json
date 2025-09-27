@@ -136,18 +136,20 @@
       },
       {
         "text": "maths compresse",
-        "votes": 0
+        "votes": 1
       }
     ],
     "status": "active",
-    "voters": []
+    "voters": [
+      "127.0.0.1"
+    ]
   },
   {
     "question": "tu aimes quelle matiere  ?",
     "options": [
       {
         "text": "maths fine",
-        "votes": 0
+        "votes": 1
       },
       {
         "text": "maths compresse",
@@ -155,6 +157,8 @@
       }
     ],
     "status": "active",
-    "voters": []
+    "voters": [
+      "127.0.0.1"
+    ]
   }
 ]
