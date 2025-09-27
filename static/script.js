@@ -68,7 +68,7 @@ async function loadPolls() {
       card.appendChild(optionDiv);
     });
 
-    // 🎯 Ajout du graphique Chart.js
+    // Ajout du graphique Chart.js
     const canvas = document.createElement('canvas');
     card.appendChild(canvas);
 
@@ -115,7 +115,7 @@ function vote(pollId, optionIndex) {
       loadPolls();
   })
   .catch(err => {
-      alert("⚠️ " + (err.error || "Erreur inconnue"));
+      alert(" " + (err.error || "Erreur inconnue"));
   });
 }
 

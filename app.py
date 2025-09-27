@@ -2,12 +2,12 @@ from flask import Flask, request, jsonify, render_template, flash, url_for, redi
 from flask_cors import CORS
 from datetime import timedelta
 import json, os
-
+from flask import make_response
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# 🔑 Clé secrète sécurisée (prend depuis ENV, sinon fallback)
+#  Clé secrète sécurisée (prend depuis ENV, sinon fallback)
 app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_key")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
@@ -97,6 +97,42 @@ def vote(poll_id, option_index):
 
     save_polls(polls)
     return jsonify({"message": "Vote enregistré"}), 200
+
+@app.route("/vote/<int:poll_id>/<option>", methods=["POST"])
+def vote_option(poll_id, option):
+    polls = load_polls()
+    poll = next((p for p in polls if p["id"] == poll_id), None)
+
+    if not poll:
+        return jsonify({"error": "Sondage introuvable"}), 404
+
+    # Vérifier si l’utilisateur a déjà voté (cookie)
+    voted_polls = request.cookies.get("voted_polls", "")
+    voted_list = voted_polls.split(",") if voted_polls else []
+    if str(poll_id) in voted_list:
+        return jsonify({"error": "Vous avez déjà voté pour ce sondage"}), 400
+
+    # Vérifier que l’option existe
+    if option not in poll["options"]:
+        return jsonify({"error": "Option invalide"}), 400
+
+    # Ajouter le vote
+    poll["votes"][option] += 1
+    save_polls(polls)
+
+    # Recalculer les résultats
+    total_votes = sum(poll["votes"].values())
+    results = {
+        opt: round((poll["votes"][opt] / total_votes) * 100, 1) if total_votes > 0 else 0
+        for opt in poll["options"]
+    }
+
+    # Réponse avec cookie pour bloquer un deuxième vote
+    resp = make_response(jsonify({"success": True, "results": results}))
+    voted_list.append(str(poll_id))
+    resp.set_cookie("voted_polls", ",".join(voted_list), max_age=60*60*24*365)  # 1 an
+
+    return resp
 
 
 # ----------- ROUTES ADMIN -----------

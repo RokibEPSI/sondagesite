@@ -126,5 +126,35 @@
     "voters": [
       "127.0.0.1"
     ]
+  },
+  {
+    "question": "tu aimes quelle matiere  ?",
+    "options": [
+      {
+        "text": "maths fine",
+        "votes": 0
+      },
+      {
+        "text": "maths compresse",
+        "votes": 0
+      }
+    ],
+    "status": "active",
+    "voters": []
+  },
+  {
+    "question": "tu aimes quelle matiere  ?",
+    "options": [
+      {
+        "text": "maths fine",
+        "votes": 0
+      },
+      {
+        "text": "maths compresse",
+        "votes": 0
+      }
+    ],
+    "status": "active",
+    "voters": []
   }
 ]
