@@ -4,6 +4,7 @@ from datetime import timedelta
 import json, os
 from flask import make_response
 from flask_sqlalchemy import SQLAlchemy
+import uuid
 
 app = Flask(__name__)
 
@@ -47,7 +48,12 @@ def save_polls(polls):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(polls, f, indent=2, ensure_ascii=False)
 
-
+@app.before_request
+def assign_user_cookie():
+    if not request.cookies.get("user_id"):
+        resp = make_response()  
+        resp.set_cookie("user_id", str(uuid.uuid4()), max_age=60*60*24*365)  # cookie valable 1 an
+        return resp
 # ----------- ROUTES UTILISATEUR -----------
 @app.route("/api/polls", methods=["GET"])
 def get_active_polls():
@@ -80,7 +86,10 @@ def proposer_poll():
 
 @app.route("/api/vote/<int:poll_id>/<int:option_index>", methods=["POST"])
 def vote(poll_id, option_index):
-    user_ip = request.remote_addr
+    user_id = request.cookies.get("user_id")  # identifiant unique du navigateur
+    if not user_id:
+        return jsonify({"error": "Utilisateur non identifié"}), 400
+
     polls = load_polls()
     active_polls = [p for p in polls if p.get("status") == "active"]
 
@@ -89,17 +98,14 @@ def vote(poll_id, option_index):
 
     poll = active_polls[poll_id]
 
-    if user_ip in poll.get("voters", []):
+    if user_id in poll.get("voters", []):
         return jsonify({"error": "Vous avez déjà voté"}), 403
 
     poll["options"][option_index]["votes"] += 1
-    poll["voters"].append(user_ip)
+    poll["voters"].append(user_id)
 
     save_polls(polls)
     return jsonify({"message": "Vote enregistré"}), 200
-
-
-
 
 # ----------- ROUTES ADMIN -----------
 @app.route("/api/polls/pending", methods=["GET"])

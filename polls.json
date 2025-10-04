@@ -43,16 +43,18 @@
     "options": [
       {
         "text": "Democratie",
-        "votes": 1
+        "votes": 2
       },
       {
         "text": "Politique",
-        "votes": 0
+        "votes": 1
       }
     ],
     "status": "active",
     "voters": [
-      "127.0.0.1"
+      "127.0.0.1",
+      "a4061b9b-a88f-4b36-be26-7f36d250db05",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
     ]
   },
   {
@@ -60,7 +62,7 @@
     "options": [
       {
         "text": "Pr",
-        "votes": 0
+        "votes": 2
       },
       {
         "text": "LD",
@@ -69,7 +71,9 @@
     ],
     "status": "active",
     "voters": [
-      "127.0.0.1"
+      "127.0.0.1",
+      "a4061b9b-a88f-4b36-be26-7f36d250db05",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
     ]
   },
   {
@@ -119,12 +123,13 @@
       },
       {
         "text": "physique",
-        "votes": 1
+        "votes": 2
       }
     ],
     "status": "active",
     "voters": [
-      "127.0.0.1"
+      "127.0.0.1",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
     ]
   },
   {
@@ -136,12 +141,13 @@
       },
       {
         "text": "maths compresse",
-        "votes": 1
+        "votes": 2
       }
     ],
     "status": "active",
     "voters": [
-      "127.0.0.1"
+      "127.0.0.1",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
     ]
   },
   {
@@ -153,12 +159,31 @@
       },
       {
         "text": "maths compresse",
-        "votes": 0
+        "votes": 1
       }
     ],
     "status": "active",
     "voters": [
-      "127.0.0.1"
+      "127.0.0.1",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
+    ]
+  },
+  {
+    "question": "comment  appelle ton le president de la republique",
+    "options": [
+      {
+        "text": "dg",
+        "votes": 0
+      },
+      {
+        "text": "talon",
+        "votes": 2
+      }
+    ],
+    "status": "active",
+    "voters": [
+      "a4061b9b-a88f-4b36-be26-7f36d250db05",
+      "7e94813c-8c08-474b-89cf-9d60330323a5"
     ]
   }
 ]
