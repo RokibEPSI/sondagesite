@@ -1,15 +1,17 @@
 from flask import Flask, request, jsonify, render_template, flash, url_for, redirect, session
 from flask_cors import CORS
 from datetime import timedelta
+from functools import wraps
+import hmac
 import json, os
-from flask import make_response
+import secrets
 from flask_sqlalchemy import SQLAlchemy
 import uuid
 
 app = Flask(__name__)
 
-#  Clé secrète sécurisée (prend depuis ENV, sinon fallback)
-app.secret_key = os.environ.get("SECRET_KEY", "fallback_secret_key")
+#  Clé secrète lue depuis l'environnement ; sinon clé aléatoire (les sessions ne survivent pas à un redémarrage)
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 CORS(app)
@@ -48,22 +50,39 @@ def save_polls(polls):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(polls, f, indent=2, ensure_ascii=False)
 
-@app.before_request
-def assign_user_cookie():
+def public_poll(poll):
+    """Retire la liste des votants (identifiants de cookies) avant d'envoyer un sondage au navigateur."""
+    return {key: value for key, value in poll.items() if key != "voters"}
+
+
+def admin_required(view):
+    """Réserve une route de l'API à l'administrateur connecté."""
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin"):
+            return jsonify({"error": "Authentification administrateur requise"}), 401
+        return view(*args, **kwargs)
+    return wrapper
+
+
+@app.after_request
+def assign_user_cookie(response):
+    # Posé après la réponse : la première visite affiche bien la page (avant, elle était vide)
     if not request.cookies.get("user_id"):
-        resp = make_response()  
-        resp.set_cookie("user_id", str(uuid.uuid4()), max_age=60*60*24*365)  # cookie valable 1 an
-        return resp
+        response.set_cookie(
+            "user_id", str(uuid.uuid4()), max_age=60*60*24*365, httponly=True, samesite="Lax"
+        )  # cookie valable 1 an
+    return response
 # ----------- ROUTES UTILISATEUR -----------
 @app.route("/api/polls", methods=["GET"])
 def get_active_polls():
-    polls = [p for p in load_polls() if p.get("status") == "active"]
+    polls = [public_poll(p) for p in load_polls() if p.get("status") == "active"]
     return jsonify(polls)
 
 
 @app.route("/api/polls/expired", methods=["GET"])
 def get_expired_polls():
-    polls = [p for p in load_polls() if p.get("status") == "expired"]
+    polls = [public_poll(p) for p in load_polls() if p.get("status") == "expired"]
     return jsonify(polls)
 
 
@@ -98,23 +117,28 @@ def vote(poll_id, option_index):
 
     poll = active_polls[poll_id]
 
+    if option_index >= len(poll["options"]):
+        return jsonify({"error": "Option inexistante"}), 404
+
     if user_id in poll.get("voters", []):
         return jsonify({"error": "Vous avez déjà voté"}), 403
 
     poll["options"][option_index]["votes"] += 1
-    poll["voters"].append(user_id)
+    poll.setdefault("voters", []).append(user_id)
 
     save_polls(polls)
     return jsonify({"message": "Vote enregistré"}), 200
 
 # ----------- ROUTES ADMIN -----------
 @app.route("/api/polls/pending", methods=["GET"])
+@admin_required
 def get_pending():
-    polls = [p for p in load_polls() if p.get("status") == "pending"]
+    polls = [public_poll(p) for p in load_polls() if p.get("status") == "pending"]
     return jsonify(polls)
 
 
 @app.route("/api/polls/validate/<int:index>", methods=["POST"])
+@admin_required
 def validate_poll(index):
     polls = load_polls()
     pending_polls = [p for p in polls if p.get("status") == "pending"]
@@ -129,6 +153,7 @@ def validate_poll(index):
 
 
 @app.route("/api/admin/create", methods=["POST"])
+@admin_required
 def admin_create_poll():
     data = request.json
     if not data.get("question") or not data.get("options"):
@@ -146,6 +171,7 @@ def admin_create_poll():
 
 
 @app.route("/api/polls/expire/<int:index>", methods=["POST"])
+@admin_required
 def expire_poll(index):
     polls = load_polls()
     active_polls = [p for p in polls if p.get("status") == "active"]
@@ -160,6 +186,7 @@ def expire_poll(index):
 
 
 @app.route("/api/polls/refuse/<int:index>", methods=["DELETE"])
+@admin_required
 def refuse_poll(index):
     polls = load_polls()
     pending_polls = [p for p in polls if p.get("status") == "pending"]
@@ -175,18 +202,26 @@ def refuse_poll(index):
 
 
 # ----------- AUTH ADMIN -----------
-ADMIN_CREDENTIALS = {
-    "username": "admin",
-    "password": "sondage.25"
-}
+# Identifiants lus depuis l'environnement (voir .env.example) : plus aucun mot de passe dans le code.
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+
+
+def check_admin_credentials(user, pwd):
+    if not ADMIN_PASSWORD:
+        return False  # connexion admin désactivée tant qu'ADMIN_PASSWORD n'est pas défini
+    # compare_digest évite de deviner le mot de passe en mesurant le temps de réponse
+    return hmac.compare_digest(user, ADMIN_USERNAME) and hmac.compare_digest(pwd, ADMIN_PASSWORD)
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        user = request.form["username"]
-        pwd = request.form["password"]
+        user = request.form.get("username", "")
+        pwd = request.form.get("password", "")
 
-        if user == ADMIN_CREDENTIALS["username"] and pwd == ADMIN_CREDENTIALS["password"]:
+        if check_admin_credentials(user, pwd):
+            session.permanent = True
             session["admin"] = True
             flash("Connexion réussie", "success")
             return redirect(url_for("admin_page"))
